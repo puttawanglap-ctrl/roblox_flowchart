@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roblox Style: Flowchart Adventure</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: #87CEEB; /* Sky blue background like Roblox baseplate */
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.3) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.3) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* Blocky Design System (Roblox/Minecraft inspired) */
+        .block-ui {
+            border: 4px solid #1a202c;
+            box-shadow: 6px 6px 0px #1a202c;
+            transition: all 0.1s ease;
+        }
+        
+        .block-ui:active:not(:disabled) {
+            transform: translate(4px, 4px);
+            box-shadow: 2px 2px 0px #1a202c;
+        }
+
+        .block-ui:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        /* Flowchart Shapes */
+        .fc-start-end {
+            background-color: #F687B3; /* Pink */
+            border-radius: 9999px; /* Capsule */
+            padding: 12px 32px;
+            font-weight: bold;
+            font-size: 1.25rem;
+            color: #fff;
+            text-shadow: 2px 2px 0px #000;
+        }
+
+        .fc-process {
+            background-color: #63B3ED; /* Blue */
+            border-radius: 8px; /* Rectangle */
+            padding: 16px 24px;
+            font-weight: bold;
+            font-size: 1.25rem;
+            color: #fff;
+            text-shadow: 2px 2px 0px #000;
+            cursor: pointer;
+        }
+
+        .fc-process.empty {
+            background-color: #E2E8F0;
+            color: #4A5568;
+            border-style: dashed;
+            text-shadow: none;
+            animation: pulse 2s infinite;
+        }
+
+        .fc-decision-container {
+            width: 140px;
+            height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .fc-decision {
+            background-color: #F6E05E; /* Yellow */
+            width: 100px;
+            height: 100px;
+            transform: rotate(45deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            z-index: 1;
+        }
+
+        .fc-decision-text {
+            transform: rotate(-45deg);
+            font-weight: bold;
+            text-align: center;
+            line-height: 1.2;
+            z-index: 2;
+            text-shadow: 1px 1px 0px #fff;
+        }
+
+        .fc-arrow {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #2D3748;
+            margin: 8px 0;
+            line-height: 1;
+        }
+
+        /* Additional Flowchart Symbols for Lesson */
+        .fc-io {
+            background-color: #48BB78; /* Green */
+            transform: skew(-15deg);
+            padding: 10px 20px;
+            color: #fff;
+            font-weight: bold;
+            text-shadow: 2px 2px 0px #000;
+        }
+        .fc-io-text {
+            transform: skew(15deg);
+        }
+        
+        .fc-document {
+            background-color: #ED8936; /* Orange */
+            padding: 12px 20px;
+            border-bottom-right-radius: 20px; /* Simulate wave bottom */
+            color: #fff;
+            font-weight: bold;
+            text-shadow: 2px 2px 0px #000;
+        }
+
+        .fc-display {
+            background-color: #9F7AEA; /* Purple */
+            padding: 12px 20px;
+            border-radius: 20px 0 0 20px; /* Simulate bullet shape */
+            color: #fff;
+            font-weight: bold;
+            text-shadow: 2px 2px 0px #000;
+        }
+
+        .fc-connector {
+            background-color: #A0AEC0; /* Gray */
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: bold;
+            text-shadow: 2px 2px 0px #000;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .hide { display: none !important; }
+        
+        /* Confetti Canvas */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* Certificate Print Styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #certificate-view, #certificate-view * {
+                visibility: visible;
+            }
+            #certificate-view {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background-color: #fff !important;
+                padding: 0;
+            }
+            .print\:hidden {
+                display: none !important;
+            }
+            .print\:shadow-none {
+                box-shadow: none !important;
+            }
+            .print\:border-gray-800 {
+                border-color: #2D3748 !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- Confetti -->
+    <canvas id="confetti-canvas" class="hide"></canvas>
+
+    <!-- Main Game Container -->
+    <div class="max-w-3xl w-full bg-white block-ui p-6 sm:p-10 rounded-2xl relative overflow-hidden">
+        
+        <!-- Decoration -->
+        <div class="absolute top-4 right-4 text-4xl opacity-20">🧱</div>
+        <div class="absolute bottom-4 left-4 text-4xl opacity-20">⚔️</div>
+
+        <!-- SCREEN: HOME -->
+        <div id="screen-home" class="text-center space-y-8 py-10">
+            <h1 class="text-5xl sm:text-6xl font-extrabold text-blue-600 drop-shadow-md">
+                โลกผังงาน<br><span class="text-yellow-500">ทะลุมิติ!</span>
+            </h1>
+            <p class="text-xl text-gray-700 font-semibold max-w-lg mx-auto">
+                ยินดีต้อนรับสู่โลกบล็อก! ช่วยหนูน้อย "บล็อกกี้" แก้ปริศนาผังงาน (Flowchart) เพื่อพิชิตภารกิจสุดว้าวกันเถอะ!
+            </p>
+            <div class="text-6xl animate-bounce">👦📦</div>
+            
+            <div class="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+                <button onclick="showLesson()" class="block-ui bg-orange-400 hover:bg-orange-500 text-white text-2xl font-bold py-4 px-8 rounded-xl w-full sm:w-auto">
+                    📖 เรียนรู้ก่อนเล่น
+                </button>
+                <button onclick="startGame()" class="block-ui bg-green-500 hover:bg-green-600 text-white text-2xl font-bold py-4 px-8 rounded-xl w-full sm:w-auto">
+                    ▶️ เริ่มเล่นเกมเลย!
+                </button>
+            </div>
+        </div>
+
+        <!-- SCREEN: LESSON -->
+        <div id="screen-lesson" class="hide flex flex-col items-center w-full">
+            <h2 class="text-4xl sm:text-5xl font-extrabold text-orange-600 mb-8 drop-shadow-md text-center">
+                📖 บทเรียนฉบับย่อ
+            </h2>
+
+            <div class="space-y-6 w-full max-w-2xl text-left">
+                <!-- Lesson 1: Flowchart -->
+                <div class="bg-white block-ui p-6 rounded-2xl border-4 border-blue-400">
+                    <h3 class="text-2xl font-bold text-blue-700 mb-3">🗺️ 1. ผังงาน (Flowchart) คืออะไร?</h3>
+                    <p class="text-lg text-gray-700 mb-4 font-medium">ผังงานคือ "แผนที่" ที่ใช้สัญลักษณ์บอกขั้นตอนการทำงานให้คอมพิวเตอร์เข้าใจ สัญลักษณ์มาตรฐานที่ควรรู้จักมีดังนี้:</p>
+                    
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-6">
+                        <!-- 1. Terminal -->
+                        <div class="flex flex-col items-center text-center">
+                            <div class="fc-start-end block-ui text-xs py-2 px-3 mb-2">เริ่มต้น/สิ้นสุด</div>
+                            <span class="text-sm font-extrabold text-gray-800">Terminator</span>
+                            <span class="text-xs font-semibold text-gray-600">จุดเริ่มและจบของงาน</span>
+                        </div>
+                        
+                        <!-- 2. Process -->
+                        <div class="flex flex-col items-center text-center">
+                            <div class="fc-process block-ui text-xs py-2 px-3 mb-2">ประมวลผล</div>
+                            <span class="text-sm font-extrabold text-gray-800">Process</span>
+                            <span class="text-xs font-semibold text-gray-600">การกระทำ, คำนวณ</span>
+                        </div>
+                        
+                        <!-- 3. Decision -->
+                        <div class="flex flex-col items-center text-center">
+                            <div class="fc-decision-container w-16 h-16 mb-2">
+                                <div class="fc-decision block-ui w-12 h-12 bg-yellow-400"></div>
+                                <div class="fc-decision-text text-[10px] leading-tight">เงื่อนไข</div>
+                            </div>
+                            <span class="text-sm font-extrabold text-gray-800 mt-2">Decision</span>
+                            <span class="text-xs font-semibold text-gray-600">ตัดสินใจ (ใช่/ไม่ใช่)</span>
+                        </div>
+
+                        <!-- 4. Input/Output -->
+                        <div class="flex flex-col items-center text-center">
+                            <div class="fc-io block-ui mb-2 mt-1"><div class="fc-io-text text-xs">รับ/แสดง</div></div>
+                            <span class="text-sm font-extrabold text-gray-800">Data (I/O)</span>
+                            <span class="text-xs font-semibold text-gray-600">รับหรือแสดงข้อมูลทั่วไป</span>
+                        </div>
+
+                        <!-- 5. Display -->
+                        <div class="flex flex-col items-center text-center">
+                            <div class="fc-display block-ui text-xs py-2 px-4 mb-2">หน้าจอ</div>
+                            <span class="text-sm font-extrabold text-gray-800">Display</span>
+                            <span class="text-xs font-semibold text-gray-600">แสดงผลออกหน้าจอ</span>
+                        </div>
+
+                        <!-- 6. Document -->
+                        <div class="flex flex-col items-center text-center">
+                            <div class="fc-document block-ui text-xs py-2 px-4 mb-2">เอกสาร</div>
+                            <span class="text-sm font-extrabold text-gray-800">Document</span>
+                            <span class="text-xs font-semibold text-gray-600">แสดงผลทางกระดาษ</span>
+                        </div>
+
+                        <!-- 7. Connector -->
+                        <div class="flex flex-col items-center text-center">
+                            <div class="fc-connector block-ui mb-2 mt-1">A</div>
+                            <span class="text-sm font-extrabold text-gray-800">Connector</span>
+                            <span class="text-xs font-semibold text-gray-600">จุดเชื่อมต่อผังงาน</span>
+                        </div>
+
+                        <!-- 8. Flowline -->
+                        <div class="flex flex-col items-center text-center">
+                            <div class="flex gap-2 text-3xl font-black text-gray-700 mb-2 mt-2 drop-shadow-md">⬇️➡️</div>
+                            <span class="text-sm font-extrabold text-gray-800">Flowline</span>
+                            <span class="text-xs font-semibold text-gray-600">ลูกศรบอกทิศทาง</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lesson 2: Sequence -->
+                <div class="bg-white block-ui p-6 rounded-2xl border-4 border-green-400">
+                    <h3 class="text-2xl font-bold text-green-700 mb-3">🔢 2. การทำงานแบบลำดับ (Sequence)</h3>
+                    <p class="text-lg text-gray-700 font-medium">คือการทำงานแบบทำตามขั้นตอน 1 ➡️ 2 ➡️ 3 ไปเรื่อยๆ <span class="text-red-500 font-bold">ข้ามขั้นตอนไม่ได้!</span></p>
+                    <div class="bg-gray-100 p-4 rounded-xl mt-3 flex items-center justify-center gap-2 font-bold text-lg">
+                        ตื่นนอน 🛏️ <span class="text-gray-400">➡️</span> อาบน้ำ 🚿 <span class="text-gray-400">➡️</span> กินข้าว 🍛
+                    </div>
+                </div>
+
+                <!-- Lesson 3: Condition -->
+                <div class="bg-white block-ui p-6 rounded-2xl border-4 border-yellow-400">
+                    <h3 class="text-2xl font-bold text-yellow-600 mb-3">🔀 3. การทำงานแบบมีเงื่อนไข (Condition)</h3>
+                    <p class="text-lg text-gray-700 font-medium">คือการเจอ "ทางแยก" ที่ต้องตัดสินใจ! โดยมักจะเป็นคำถามที่ตอบได้ว่า <span class="text-green-600 font-bold">"ใช่ (จริง)"</span> หรือ <span class="text-red-500 font-bold">"ไม่ใช่ (เท็จ)"</span></p>
+                    <div class="bg-gray-100 p-4 rounded-xl mt-3 flex flex-col items-center font-bold text-lg">
+                        <div>หิวข้าวหรือไม่? 🤔</div>
+                        <div class="flex gap-4 mt-2 w-full justify-around text-base">
+                            <div class="text-green-600 bg-green-100 px-3 py-1 rounded-lg border-2 border-green-300">✓ ใช่ ➡️ กินข้าว 🍛</div>
+                            <div class="text-red-500 bg-red-100 px-3 py-1 rounded-lg border-2 border-red-300">✗ ไม่ใช่ ➡️ ไปเล่น ⚽</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-10">
+                <button onclick="startGame()" class="block-ui bg-green-500 hover:bg-green-600 text-white text-2xl font-bold py-4 px-12 rounded-xl">
+                    ✅ เข้าใจแล้ว! ลุยเกมเลย!
+                </button>
+            </div>
+        </div>
+
+        <!-- SCREEN: GAMEPLAY -->
+        <div id="screen-game" class="hide flex flex-col items-center">
+            
+            <!-- Header -->
+            <div class="w-full flex justify-between items-center mb-6 border-b-4 border-gray-200 pb-4">
+                <h2 id="level-title" class="text-2xl font-extrabold text-indigo-700">ด่านที่ 1</h2>
+                <div class="text-xl font-bold bg-yellow-300 px-4 py-1 block-ui rounded-lg">
+                    คะแนน: <span id="score-display">0</span> ⭐️
+                </div>
+            </div>
+
+            <!-- Story / Scenario -->
+            <div class="bg-blue-50 block-ui border-blue-400 p-4 rounded-xl w-full mb-8">
+                <h3 id="scenario-title" class="text-xl font-bold text-blue-800 mb-2">ภารกิจ: ???</h3>
+                <p id="scenario-desc" class="text-gray-700 font-semibold text-lg"></p>
+                <div id="scenario-image" class="text-5xl mt-4 text-center"></div>
+            </div>
+
+            <!-- Flowchart Area -->
+            <div id="flowchart-container" class="w-full bg-gray-50 border-4 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center min-h-[400px]">
+                <!-- Flowchart elements will be injected here -->
+            </div>
+
+            <!-- Action Button -->
+            <div class="mt-8">
+                <button id="check-btn" onclick="checkAnswers()" class="block-ui bg-indigo-500 hover:bg-indigo-600 text-white text-xl font-bold py-3 px-8 rounded-xl opacity-50 cursor-not-allowed">
+                    ✅ ตรวจคำตอบ
+                </button>
+            </div>
+        </div>
+
+        <!-- SCREEN: END GAME -->
+        <div id="screen-end" class="hide text-center space-y-8 py-10 w-full">
+            <h1 class="text-5xl font-extrabold text-green-500 drop-shadow-md">
+                ภารกิจสำเร็จ! 🎉
+            </h1>
+            <p class="text-2xl text-gray-700 font-semibold">
+                น้องๆ คือยอดฝีมือแห่งผังงาน! (Flowchart Master)
+            </p>
+            <div class="text-7xl">🏆👑</div>
+            <p class="text-lg text-gray-600">ผ่านครบ 20 ด่านแล้ว เก่งมากๆ เลย! 🎉</p>
+            <button onclick="location.reload()" class="block-ui bg-blue-500 hover:bg-blue-600 text-white text-xl font-bold py-3 px-8 rounded-xl">
+                🔄 เล่นอีกครั้ง
+            </button>
+
+            <!-- Certificate Setup -->
+            <div class="mt-8 p-6 bg-purple-50 rounded-2xl border-4 border-purple-200">
+                <h3 class="text-2xl font-bold text-purple-700 mb-4">🎓 พิมพ์ใบประกาศนียบัตรส่งคุณครู 🎓</h3>
+                <input type="text" id="student-name" placeholder="พิมพ์ชื่อ-นามสกุลของน้องๆ ที่นี่..." class="block-ui w-full max-w-md p-4 text-xl rounded-xl mb-4 text-center mx-auto block">
+                <button onclick="generateCertificate()" class="block-ui bg-purple-500 hover:bg-purple-600 text-white text-xl font-bold py-3 px-8 rounded-xl w-full sm:w-auto">
+                    ✨ สร้างใบประกาศนียบัตร
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MODAL: Choices -->
+    <div id="modal-choices" class="hide fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+        <div class="bg-white block-ui p-6 rounded-2xl max-w-md w-full animate-[pop_0.2s_ease-out]">
+            <h3 class="text-2xl font-bold text-center mb-6">เลือกบล็อกคำสั่งที่ถูกต้อง!</h3>
+            <div id="choices-container" class="space-y-4 flex flex-col">
+                <!-- Choices injected here -->
+            </div>
+            <button onclick="closeModal()" class="mt-6 w-full block-ui bg-red-400 hover:bg-red-500 text-white font-bold py-3 px-4 rounded-xl">
+                ❌ ปิดหน้าต่าง
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL: Feedback -->
+    <div id="modal-feedback" class="hide fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+        <div class="bg-white block-ui p-8 rounded-2xl max-w-sm w-full text-center">
+            <div id="feedback-icon" class="text-6xl mb-4"></div>
+            <h3 id="feedback-title" class="text-3xl font-extrabold mb-2"></h3>
+            <p id="feedback-msg" class="text-lg font-semibold text-gray-600 mb-6"></p>
+            <button id="feedback-btn" class="w-full block-ui font-bold py-3 px-4 rounded-xl text-white text-xl">
+                ทำภารกิจต่อไป!
+            </button>
+        </div>
+    </div>
+
+    <!-- CERTIFICATE VIEW (Printable) -->
+    <div id="certificate-view" class="hide fixed inset-0 bg-white z-[100] flex flex-col items-center justify-center p-4 sm:p-8 text-center print:static print:z-auto print:block print:bg-white">
+        <div class="border-[12px] border-yellow-400 p-8 sm:p-16 rounded-3xl w-full max-w-5xl shadow-2xl bg-blue-50 relative print:shadow-none print:border-gray-800 print:bg-white print:w-full print:max-w-none print:h-screen print:border-8">
+            <h1 class="text-4xl sm:text-6xl font-extrabold text-blue-800 mb-8 mt-10 print:text-5xl">🏆 ใบประกาศเกียรติคุณ 🏆</h1>
+            <p class="text-xl sm:text-3xl mb-6 font-semibold text-gray-700">ขอมอบเกียรติบัตรฉบับนี้เพื่อแสดงว่า</p>
+            <h2 id="cert-name-display" class="text-4xl sm:text-6xl font-bold text-purple-600 mb-8 underline decoration-dashed decoration-purple-300 underline-offset-8 print:text-purple-800">ชื่อนักเรียน</h2>
+            <p class="text-xl sm:text-2xl mb-12 font-medium text-gray-700 leading-relaxed">ได้ผ่านการทดสอบทักษะ<br><span class="text-blue-600 font-bold text-3xl print:text-blue-800">"วิทยาการคำนวณ: การคิดเชิงคำนวณและผังงาน (Flowchart) 20 ด่าน"</span><br>ระดับยอดเยี่ยม!</p>
+            
+            <div class="flex justify-between items-end mt-20 px-4 sm:px-20">
+                <div class="text-center">
+                    <div class="text-6xl mb-4">🧑‍🏫</div>
+                    <div class="border-b-2 border-black w-32 sm:w-48 mb-2 mx-auto"></div>
+                    <p class="text-lg sm:text-xl font-bold">คุณครูผู้สอน</p>
+                </div>
+                <div class="text-center flex flex-col items-center">
+                    <div class="w-24 h-24 sm:w-32 sm:h-32 bg-yellow-300 rounded-full flex items-center justify-center border-4 border-yellow-500 mb-4 shadow-lg print:border-gray-500 print:bg-yellow-200">
+                        <span class="text-4xl sm:text-6xl">🏅</span>
+                    </div>
+                    <p class="text-lg sm:text-xl font-bold text-yellow-600 print:text-gray-800">Flowchart Master</p>
+                </div>
+            </div>
+
+            <!-- Print Controls -->
+            <div class="print:hidden absolute top-4 right-4 flex gap-4">
+                <button onclick="window.print()" class="block-ui bg-green-500 hover:bg-green-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-xl text-lg sm:text-xl font-bold">🖨️ พิมพ์ (Print)</button>
+                <button onclick="closeCertificate()" class="block-ui bg-red-500 hover:bg-red-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-xl text-lg sm:text-xl font-bold">❌ ปิด</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- GAME DATA ---
+        const levels = [
+            {
+                type: 'sequence', title: 'ด่านที่ 1: การตื่นนอน (Sequence)', scenario: '🌅 ภารกิจ: เตรียมตัวไปโรงเรียน',
+                desc: 'เราต้องทำตามลำดับก่อนหลังนะ! หลังจากตื่นนอนและอาบน้ำแล้ว ขั้นตอนต่อไปควรทำอะไรเอ่ย?',
+                wowImage: '🛏️🚿👕',
+                nodes: [
+                    { type: 'start', text: 'เริ่มต้น' }, { type: 'process', text: 'ตื่นนอน และ อาบน้ำ' },
+                    { type: 'question', id: 'q1', correct: 'แต่งตัวชุดนักเรียน 👕' },
+                    { type: 'process', text: 'ไปโรงเรียน 🎒' }, { type: 'end', text: 'สิ้นสุด' }
+                ],
+                choices: ['แต่งตัวชุดนักเรียน 👕', 'ทำการบ้านตอนดึก 📝', 'ถอดชุดนอนทิ้งไว้ที่พื้น 🧦']
+            },
+            {
+                type: 'condition', title: 'ด่านที่ 2: วันฝนตก (Condition)', scenario: '☔ ภารกิจ: รับมือกับสายฝน',
+                desc: 'ถ้าเงื่อนไขคือ "ฝนตก" เราต้องตัดสินใจว่าจะทำอย่างไรดี!', wowImage: '🌧️🌂🤔',
+                nodes: [
+                    { type: 'start', text: 'เริ่มต้น' }, { type: 'decision', text: 'ฝนกำลังตก หรือไม่?' },
+                    { branches: { yes: { type: 'question', id: 'q2_y', correct: 'กางร่ม ☂️' }, no: { type: 'question', id: 'q2_n', correct: 'เก็บร่มใส่กระเป๋า 🎒' } } },
+                    { type: 'end', text: 'สิ้นสุด' }
+                ],
+                choices: ['กางร่ม ☂️', 'เก็บร่มใส่กระเป๋า 🎒', 'ไปวิ่งเล่นน้ำฝน 🏃', 'ใส่แว่นกันแดด 😎']
+            },
+            {
+                type: 'condition', title: 'ด่านที่ 3: ข้ามถนน (Condition)', scenario: '🚦 ภารกิจ: ข้ามทางม้าลายอย่างปลอดภัย',
+                desc: 'สัญญาณไฟคนข้ามเป็นเรื่องสำคัญ ถ้าไฟสีเขียวทำอย่างไร และถ้าไฟสีแดงทำอย่างไร?', wowImage: '🚶‍♂️🚥🛑',
+                nodes: [
+                    { type: 'start', text: 'เริ่มต้น' }, { type: 'decision', text: 'สัญญาณไฟคนข้าม สีเขียว หรือไม่?' },
+                    { branches: { yes: { type: 'question', id: 'q3_y', correct: 'เดินข้ามถนนอย่างระมัดระวัง 🚶' }, no: { type: 'question', id: 'q3_n', correct: 'หยุดรอที่ทางเท้า 🛑' } } },
+                    { type: 'end', text: 'สิ้นสุด' }
+                ],
+                choices: ['เดินข้ามถนนอย่างระมัดระวัง 🚶', 'หยุดรอที่ทางเท้า 🛑', 'วิ่งตัดหน้ารถ 🏃‍♂️', 'เต้นรอไฟแดง 🕺']
+            },
+            {
+                type: 'sequence', title: 'ด่านที่ 4: ล้างมือให้สะอาด (Sequence)', scenario: '🧼 ภารกิจ: พิชิตเชื้อโรค',
+                desc: 'การล้างมือต้องทำตามขั้นตอน ก่อนจะล้างด้วยน้ำเปล่า เราต้องทำอะไรก่อนนะ?', wowImage: '🦠👐✨',
+                nodes: [
+                    { type: 'start', text: 'เริ่มต้น' }, { type: 'process', text: 'บีบสบู่ลงบนฝ่ามือ 🧴' },
+                    { type: 'question', id: 'q4', correct: 'ถูมือให้ทั่ว 7 ขั้นตอน 👐' },
+                    { type: 'process', text: 'ล้างด้วยน้ำสะอาด 🚰' }, { type: 'end', text: 'สิ้นสุด' }
+                ],
+                choices: ['ถูมือให้ทั่ว 7 ขั้นตอน 👐', 'เอาสบู่มาถูหน้า 🧼', 'รีบเช็ดมือที่กางเกง 👖']
+            },
+            {
+                type: 'condition', title: 'ด่านที่ 5: การซื้อขนม (Condition)', scenario: '🏪 ภารกิจ: ร้านสหกรณ์โรงเรียน',
+                desc: 'ขนมราคา 10 บาท ต้องตรวจสอบเงื่อนไขว่า "มีเงินพอหรือไม่" ก่อนตัดสินใจซื้อนะ', wowImage: '💰🍩😋',
+                nodes: [
+                    { type: 'start', text: 'เริ่มต้น' }, { type: 'decision', text: 'มีเงิน 10 บาทขึ้นไป หรือไม่?' },
+                    { branches: { yes: { type: 'question', id: 'q5_y', correct: 'จ่ายเงินและรับขนม 🪙' }, no: { type: 'question', id: 'q5_n', correct: 'เก็บเงินไว้ก่อน ไม่ซื้อ ❌' } } },
+                    { type: 'end', text: 'สิ้นสุด' }
+                ],
+                choices: ['จ่ายเงินและรับขนม 🪙', 'เก็บเงินไว้ก่อน ไม่ซื้อ ❌', 'แอบหยิบขนม (ไม่ได้นะ!) 🚫', 'ร้องไห้ให้เพื่อนเลี้ยง 😭']
+            },
+            {
+                type: 'condition', title: 'ด่านที่ 6: ฮีโร่แยกขยะ (Condition)', scenario: '♻️ ภารกิจ: พิทักษ์โลกใบนี้',
+                desc: 'เรามีขวดน้ำพลาสติก 1 ใบ จะทิ้งลงถังไหนดี ถังขยะรีไซเคิลสีอะไร?', wowImage: '🗑️🌍ขวด',
+                nodes: [
+                    { type: 'start', text: 'เริ่มต้น' }, { type: 'decision', text: 'ขยะเป็นขวดพลาสติก (รีไซเคิลได้) ใช่ไหม?' },
+                    { branches: { yes: { type: 'question', id: 'q6_y', correct: 'ทิ้งลงถังสีเหลือง 🟡' }, no: { type: 'question', id: 'q6_n', correct: 'ทิ้งลงถังสีน้ำเงิน (ทั่วไป) 🔵' } } },
+                    { type: 'end', text: 'สิ้นสุด' }
+                ],
+                choices: ['ทิ้งลงถังสีเหลือง 🟡', 'ทิ้งลงถังสีน้ำเงิน (ทั่วไป) 🔵', 'ทิ้งลงบนพื้น ❌', 'ทิ้งลงถังขยะอันตรายสีแดง 🔴']
+            },
+            {
+                type: 'sequence', title: 'ด่านที่ 7: จัดตารางสอน (Sequence)', scenario: '📚 ภารกิจ: นักเรียนที่เตรียมพร้อม',
+                desc: 'ก่อนนอนเราต้องจัดกระเป๋า เมื่อดูตารางเรียนแล้ว ขั้นตอนต่อไปคืออะไร?', wowImage: '🎒📒✏️',
+                nodes: [
+                    { type: 'start', text: 'เริ่มต้น' }, { type: 'process', text: 'ดูตารางเรียนของวันพรุ่งนี้ 📅' },
+                    { type: 'question', id: 'q7', correct: 'หยิบหนังสือและสมุดใส่กระเป๋า 📘' },
+                    { type: 'process', text: 'รูดซิปกระเป๋าเตรียมไว้ 🎒' }, { type: 'end', text: 'สิ้นสุด' }
+                ],
+                choices: ['หยิบหนังสือและสมุดใส่กระเป๋า 📘', 'หยิบของเล่นใส่เต็มกระเป๋า 🤖', 'เอาหนังสือไปซ่อนใต้เตียง 🛏️']
+            },
+            {
+                type: 'sequence', title: 'ด่านที่ 8: ปลูกต้นไม้ (Sequence)', scenario: '🌱 ภารกิจ: นักพฤกษศาสตร์น้อย',
+                desc: 'หลังจากขุดหลุมและใส่เมล็ดลงไปแล้ว เราต้องทำอะไรต่อต้นไม้ถึงจะโต?', wowImage: '🪴💧🌞',
+                nodes: [
+                    { type: 'start', text: 'เริ่มต้น' }, { type: 'process', text: 'ขุดหลุมและใส่เมล็ดพืช 🕳️' },
+                    { type: 'question', id: 'q8', correct: 'กลบดินและรดน้ำ 💦' },
+                    { type: 'process', text: 'รอต้นไม้เจริญเติบโต 🌱' }, { type: 'end', text: 'สิ้นสุด' }
+                ],
+                choices: ['กลบดินและรดน้ำ 💦', 'เอาน้ำยาล้างจานมารด 🧼', 'ปิดไฟให้ต้นไม้นอน 💡']
+            },
+            {
+                type: 'sequence', title: 'ด่านที่ 9: ทำการบ้าน (Sequence)', scenario: '📝 ภารกิจ: พิชิตการบ้านเลข',
+                desc: 'เมื่อหยิบการบ้านขึ้นมาเปิดแล้ว ขั้นตอนที่ถูกต้องในการทำงานคืออะไร?', wowImage: '📖✏️🧠',
+                nodes: [
+                    { type: 'start', text: 'เริ่มต้น' }, { type: 'process', text: 'หยิบสมุดการบ้านมาเปิด 📘' },
+                    { type: 'question', id: 'q9', correct: 'อ่านโจทย์และเขียนคำตอบ ✍️' },
+                    { type: 'process', text: 'เก็บสมุดใส่กระเป๋า 🎒' }, { type: 'end', text: 'สิ้นสุด' }
+                ],
+                choices: ['อ่านโจทย์และเขียนคำตอบ ✍️', 'วาดรูปการ์ตูนเล่น 🎨', 'ให้เพื่อนทำให้ (ไม่ได้นะ!) 🙅']
+            },
+            {
+                type: 'condition', title: 'ด่านที่ 10: เวลาเล่นเกม (Condition)', scenario: '🎮 ภารกิจ: จัดสรรเวลา',
+                desc: 'อยากเล่นเกมจังเลย แต่คุณแม่ตั้งเงื่อนไขไว้ว่า "ต้องทำการบ้านให้เสร็จก่อน" นะ', wowImage: '🕹️⏱️📚',
+                nodes: [
+                    { type: 'start', text: 'เริ่มต้น' }, { type: 'decision', text: 'ทำการบ้านเสร็จแล้ว หรือไม่?' },
+                    { branches: { yes: { type: 'question', id: 'q10_y', correct: 'เล่นเกมได้ตามเวลาที่กำหนด 🎮' }, no: { type: 'question', id: 'q10_n', correct: 'ไปทำการบ้านให้เสร็จก่อน 📝' } } },
+                    { type: 'end', text: 'สิ้นสุด' }
+                ],
+                choices: ['เล่นเกมได้ตามเวลาที่กำหนด 🎮', 'ไปทำการบ้านให้เสร็จก่อน 📝', 'แอบเล่นไม่ให้แม่รู้ 🤫', 'ลบเกมทิ้งไปเลย 🗑️']
+            },
+            {
+                type: 'condition', title: 'ด่านที่ 11: อากาศหนาว (Condition)', scenario: '❄️ ภารกิจ: แต่งตัวรับลมหนาว',
+                desc: 'ตอนเช้าถ้าอากาศหนาวเราควรใส่เสื้อแบบไหน? ลองตรวจสอบเงื่อนไขดูซิ', wowImage: '⛄🧣🧥',
+                nodes: [
+                    { type: 'start', text: 'เริ่มต้น' }, { type: 'decision', text: 'อากาศหนาวเย็น หรือไม่?' },
+                    { branches: { yes: { type: 'question', id: 'q11_y', correct: 'ใส่เสื้อกันหนาวเพิ่มความอบอุ่น 🧥' }, no: { type: 'question', id: 'q11_n', correct: 'ใส่เสื้อผ้าชุดปกติ 👕' } } },
+                    { type: 'end', text: 'สิ้นสุด' }
+                ],
+                choices: ['ใส่เสื้อกันหนาวเพิ่มความอบอุ่น 🧥', 'ใส่เสื้อผ้าชุดปกติ 👕', 'เปิดพัดลมเบอร์ 3 🌪️', 'ใส่ชุดว่ายน้ำไปโรงเรียน 🩱']
+            },
+            {
+                type: 'condition', title: 'ด่านที่ 12: ไม่สบาย (Condition)', scenario: '🤒 ภารกิจ: ดูแลสุขภาพตัวเอง',
+                desc: 'ถ้ารู้สึกปวดหัวหรือตัวร้อนตอนอยู่ที่โรงเรียน เงื่อนไขนี้ควรทำอย่างไร?', wowImage: '💊🩺🏫',
+                nodes: [
+                    { type: 'start', text: 'เริ่มต้น' }, { type: 'decision', text: 'ปวดหัว มีไข้ หรือไม่?' },
+                    { branches: { yes: { type: 'question', id: 'q12_y', correct: 'บอกคุณครูและไปห้องพยาบาล 🏥' }, no: { type: 'question', id: 'q12_n', correct: 'ไปเรียนและเล่นกับเพื่อนตามปกติ 🏃‍♂️' } } },
+                    { type: 'end', text: 'สิ้นสุด' }
+                ],
+                choices: ['บอกคุณครูและไปห้องพยาบาล 🏥', 'ไปเรียนและเล่นกับเพื่อนตามปกติ 🏃‍♂️', 'แอบไปนอนในห้องน้ำ 🚽', 'กินขนมเยอะๆ จะได้หาย 🍭']
+            },
+            {
+                type: 'sequence', title: 'ด่านที่ 13: แปรงฟันให้สะอาด (Sequence)', scenario: '🦷 ภารกิจ: ต่อสู้กับแมงกินฟัน',
+                desc: 'บีบยาสีฟัน แปรงฟันเสร็จแล้ว... ขั้นตอนต่อไปก่อนจะเก็บแปรงคืออะไรนะ?', wowImage: '🪥✨😬',
+                nodes: [
+                    { type: 'start', text: 'เริ่มต้น' }, { type: 'process', text: 'บีบยาสีฟันและแปรงฟัน 🪥' },
+                    { type: 'question', id: 'q13', correct: 'บ้วนปากด้วยน้ำสะอาด 💧' },
+                    { type: 'process', text: 'ล้างแปรงและเก็บเข้าที่ 🚰' }, { type: 'end', text: 'สิ้นสุด' }
+                ],
+                choices: ['บ้วนปากด้วยน้ำสะอาด 💧', 'กลืนยาสีฟันลงไปเลย 🤢', 'เอาแปรงไปขัดรองเท้า 👟']
+            },
+            {
+                type: 'sequence', title: 'ด่านที่ 14: ยืมหนังสือ (Sequence)', scenario: '📖 ภารกิจ: ห้องสมุดหรรษา',
+                desc: 'เมื่อเจอหนังสือที่อยากอ่านแล้ว ต้องทำตามขั้นตอนการยืมหนังสืออย่างไร?', wowImage: '📚👩‍🏫🤫',
+                nodes: [
+                    { type: 'start', text: 'เริ่มต้น' }, { type: 'process', text: 'เลือกหนังสือที่อยากอ่าน 📕' },
+                    { type: 'question', id: 'q14', correct: 'ยื่นบัตรและหนังสือให้บรรณารักษ์ 💳' },
+                    { type: 'process', text: 'รับหนังสือกลับไปอ่าน 😃' }, { type: 'end', text: 'สิ้นสุด' }
+                ],
+                choices: ['ยื่นบัตรและหนังสือให้บรรณารักษ์ 💳', 'แอบเอาใส่กระเป๋ากลับบ้าน (ขโมย!) 🦹', 'ฉีกหน้ากระดาษที่ชอบเก็บไว้ 📄']
+            },
+            {
+                type: 'sequence', title: 'ด่านที่ 15: ถูพื้นบ้าน (Sequence)', scenario: '🧹 ภารกิจ: ผู้ช่วยงานบ้าน',
+                desc: 'กวาดฝุ่นออกไปแล้ว ก่อนจะเอาไม้ถูพื้นไปถู เราต้องทำอะไรกับไม้ถูพื้นก่อน?', wowImage: '✨🏠🪣',
+                nodes: [
+                    { type: 'start', text: 'เริ่มต้น' }, { type: 'process', text: 'กวาดฝุ่นและขยะออกให้หมด 🧹' },
+                    { type: 'question', id: 'q15', correct: 'ชุบน้ำและบิดไม้ถูพื้นให้หมาด 🪣' },
+                    { type: 'process', text: 'ถูพื้นให้สะอาด 🧼' }, { type: 'end', text: 'สิ้นสุด' }
+                ],
+                choices: ['ชุบน้ำและบิดไม้ถูพื้นให้หมาด 🪣', 'เอาไม้ถูพื้นแห้งๆ ถูเลย 🌵', 'เอาน้ำหวานมาราดพื้นแทนน้ำ 🥤']
+            },
+            {
+                type: 'condition', title: 'ด่านที่ 16: ชาร์จแบตเตอรี่ (Condition)', scenario: '🔋 ภารกิจ: พลังงานใกล้หมด!',
+                desc: 'แท็บเล็ตแจ้งเตือน ลองดูเงื่อนไขว่าถ้าแบตเหลือน้อยต้องทำอย่างไร?', wowImage: '📱🔌⚡',
+                nodes: [
+                    { type: 'start', text: 'เริ่มต้น' }, { type: 'decision', text: 'แบตเตอรี่ต่ำกว่า 20% หรือไม่?' },
+                    { branches: { yes: { type: 'question', id: 'q16_y', correct: 'เสียบสายชาร์จแบตเตอรี่ 🔌' }, no: { type: 'question', id: 'q16_n', correct: 'ใช้งานแท็บเล็ตต่อไปได้ 📱' } } },
+                    { type: 'end', text: 'สิ้นสุด' }
+                ],
+                choices: ['เสียบสายชาร์จแบตเตอรี่ 🔌', 'ใช้งานแท็บเล็ตต่อไปได้ 📱', 'เอาแท็บเล็ตไปแช่น้ำเย็น 🧊', 'เคาะแท็บเล็ตแรงๆ 🔨']
+            },
+            {
+                type: 'condition', title: 'ด่านที่ 17: ขึ้นลิฟต์ (Condition)', scenario: '🏢 ภารกิจ: ลิฟต์โดยสาร',
+                desc: 'ลิฟต์มีเสียงเตือน ติ๊ดๆ! เงื่อนไขคือถ้าน้ำหนักเกิน เราควรทำตัวอย่างไร?', wowImage: '🚪👨‍👩‍👧‍👦⚠️',
+                nodes: [
+                    { type: 'start', text: 'เริ่มต้น' }, { type: 'decision', text: 'มีเสียงเตือนน้ำหนักเกิน หรือไม่?' },
+                    { branches: { yes: { type: 'question', id: 'q17_y', correct: 'เดินออกและรอลิฟต์รอบหน้า 🚶‍♂️' }, no: { type: 'question', id: 'q17_n', correct: 'ยืนรอในลิฟต์ให้ประตูปิด 🚪' } } },
+                    { type: 'end', text: 'สิ้นสุด' }
+                ],
+                choices: ['เดินออกและรอลิฟต์รอบหน้า 🚶‍♂️', 'ยืนรอในลิฟต์ให้ประตูปิด 🚪', 'พยายามเบียดคนเข้าไปอีก 🤼', 'กระโดดตึ้งๆ ในลิฟต์ 🦘']
+            },
+            {
+                type: 'sequence', title: 'ด่านที่ 18: ทานอาหาร (Sequence)', scenario: '🍽️ ภารกิจ: มื้ออร่อย',
+                desc: 'หลังจากตักอาหารเข้าปากแล้ว ขั้นตอนที่สำคัญมากเพื่อไม่ให้ติดคอคืออะไร?', wowImage: '😋🍛🥢',
+                nodes: [
+                    { type: 'start', text: 'เริ่มต้น' }, { type: 'process', text: 'ล้างมือให้สะอาดและตักอาหาร 🥄' },
+                    { type: 'question', id: 'q18', correct: 'เคี้ยวอาหารให้ละเอียด 🦷' },
+                    { type: 'process', text: 'กลืนและดื่มน้ำตาม 💧' }, { type: 'end', text: 'สิ้นสุด' }
+                ],
+                choices: ['เคี้ยวอาหารให้ละเอียด 🦷', 'รีบกลืนโดยไม่เคี้ยว 🦆', 'คายทิ้งลงใต้โต๊ะ 🤮']
+            },
+            {
+                type: 'condition', title: 'ด่านที่ 19: ช่วยเหลือเพื่อน (Condition)', scenario: '🤝 ภารกิจ: เพื่อนที่ดี',
+                desc: 'กำลังเล่นสนุกกันอยู่ ถ้าเงื่อนไขคือ "เพื่อนหกล้มบาดเจ็บ" เราควรทำอย่างไร?', wowImage: '🏃‍♂️🤕🩹',
+                nodes: [
+                    { type: 'start', text: 'เริ่มต้น' }, { type: 'decision', text: 'เห็นเพื่อนหกล้มบาดเจ็บ หรือไม่?' },
+                    { branches: { yes: { type: 'question', id: 'q19_y', correct: 'เข้าไปช่วยพยุงและเรียกคุณครู 🙋‍♂️' }, no: { type: 'question', id: 'q19_n', correct: 'เล่นกับเพื่อนอย่างระมัดระวังต่อไป ⚽' } } },
+                    { type: 'end', text: 'สิ้นสุด' }
+                ],
+                choices: ['เข้าไปช่วยพยุงและเรียกคุณครู 🙋‍♂️', 'เล่นกับเพื่อนอย่างระมัดระวังต่อไป ⚽', 'ยืนหัวเราะเพื่อน 😂', 'วิ่งหนีไปที่อื่น 🏃‍♂️💨']
+            },
+            {
+                type: 'sequence', title: 'ด่านที่ 20: เข้านอน (Sequence)', scenario: '🌙 ภารกิจ: บอกลาวันแสนสนุก',
+                desc: 'ด่านสุดท้าย! หลังจากอาบน้ำ แปรงฟัน และสวดมนต์แล้ว ขั้นตอนสุดท้ายก่อนหลับคืออะไร?', wowImage: '😴💤🛌',
+                nodes: [
+                    { type: 'start', text: 'เริ่มต้น' }, { type: 'process', text: 'อาบน้ำ แปรงฟัน สวดมนต์ 🙏' },
+                    { type: 'question', id: 'q20', correct: 'ปิดไฟและล้มตัวลงนอน 💡' },
+                    { type: 'process', text: 'หลับสนิทฝันดี 💤' }, { type: 'end', text: 'สิ้นสุด' }
+                ],
+                choices: ['ปิดไฟและล้มตัวลงนอน 💡', 'เปิดทีวีดูการ์ตูนต่อ 📺', 'ลุกขึ้นมาเต้นรอบเตียง 🕺']
+            }
+        ];
+
+        // --- STATE ---
+        let currentLevel = 0;
+        let score = 0;
+        let userAnswers = {};
+        let activeQuestionId = null;
+
+        // --- DOM ELEMENTS ---
+        const elScreenHome = document.getElementById('screen-home');
+        const elScreenLesson = document.getElementById('screen-lesson');
+        const elScreenGame = document.getElementById('screen-game');
+        const elScreenEnd = document.getElementById('screen-end');
+        const elFlowchartContainer = document.getElementById('flowchart-container');
+        const elCheckBtn = document.getElementById('check-btn');
+        const elScoreDisplay = document.getElementById('score-display');
+        
+        const modalChoices = document.getElementById('modal-choices');
+        const choicesContainer = document.getElementById('choices-container');
+        
+        const modalFeedback = document.getElementById('modal-feedback');
+
+        // --- FUNCTIONS ---
+        function showLesson() {
+            elScreenHome.classList.add('hide');
+            elScreenLesson.classList.remove('hide');
+        }
+
+        function startGame() {
+            elScreenHome.classList.add('hide');
+            elScreenLesson.classList.add('hide');
+            elScreenGame.classList.remove('hide');
+            loadLevel(currentLevel);
+        }
+
+        function loadLevel(levelIndex) {
+            const level = levels[levelIndex];
+            userAnswers = {}; // Reset answers for this level
+            
+            document.getElementById('level-title').innerText = level.title;
+            document.getElementById('scenario-title').innerText = level.scenario;
+            document.getElementById('scenario-desc').innerText = level.desc;
+            document.getElementById('scenario-image').innerText = level.wowImage;
+            
+            elCheckBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            elCheckBtn.disabled = true;
+
+            renderFlowchart(level);
+        }
+
+        function renderFlowchart(level) {
+            elFlowchartContainer.innerHTML = '';
+            
+            if (level.type === 'sequence') {
+                level.nodes.forEach((node, index) => {
+                    const el = createNodeElement(node);
+                    elFlowchartContainer.appendChild(el);
+                    
+                    // Add arrow if not the last node
+                    if (index < level.nodes.length - 1) {
+                        elFlowchartContainer.appendChild(createArrow());
+                    }
+                });
+            } else if (level.type === 'condition') {
+                // Simplified rendering for conditions for primary kids
+                
+                // 1. Start
+                elFlowchartContainer.appendChild(createNodeElement(level.nodes[0]));
+                elFlowchartContainer.appendChild(createArrow());
+                
+                // 2. Decision
+                elFlowchartContainer.appendChild(createNodeElement(level.nodes[1]));
+                
+                // 3. Branches Container
+                const branchContainer = document.createElement('div');
+                branchContainer.className = "flex w-full justify-around mt-6 relative";
+                
+                // Branch Yes
+                const branchYes = document.createElement('div');
+                branchYes.className = "flex flex-col items-center w-1/2 px-2 border-r-2 border-gray-300";
+                branchYes.innerHTML = `
+                    <div class="font-extrabold text-green-600 bg-white px-3 py-1 border-2 border-black rounded-lg mb-2 z-10 -mt-8 shadow-sm">✓ ใช่ (จริง)</div>
+                    <div class="fc-arrow">⬇️</div>
+                `;
+                branchYes.appendChild(createNodeElement(level.nodes[2].branches.yes));
+                
+                // Branch No
+                const branchNo = document.createElement('div');
+                branchNo.className = "flex flex-col items-center w-1/2 px-2";
+                branchNo.innerHTML = `
+                    <div class="font-extrabold text-red-600 bg-white px-3 py-1 border-2 border-black rounded-lg mb-2 z-10 -mt-8 shadow-sm">✗ ไม่ใช่ (เท็จ)</div>
+                    <div class="fc-arrow">⬇️</div>
+                `;
+                branchNo.appendChild(createNodeElement(level.nodes[2].branches.no));
+
+                branchContainer.appendChild(branchYes);
+                branchContainer.appendChild(branchNo);
+                elFlowchartContainer.appendChild(branchContainer);
+
+                // Merging arrows to End
+                const mergeArrows = document.createElement('div');
+                mergeArrows.className = "flex w-full justify-center mt-4 gap-8";
+                mergeArrows.innerHTML = `<div class="fc-arrow rotate-[30deg]">↘️</div><div class="fc-arrow -rotate-[30deg]">↙️</div>`;
+                elFlowchartContainer.appendChild(mergeArrows);
+
+                // 4. End
+                elFlowchartContainer.appendChild(createNodeElement(level.nodes[3]));
+            }
+        }
+
+        function createNodeElement(node) {
+            const div = document.createElement('div');
+            
+            if (node.type === 'start' || node.type === 'end') {
+                div.className = 'fc-start-end block-ui';
+                div.innerText = node.text;
+            } 
+            else if (node.type === 'process') {
+                div.className = 'fc-process block-ui bg-blue-400';
+                div.innerText = node.text;
+            }
+            else if (node.type === 'decision') {
+                // Diamond shape wrapper
+                div.className = 'fc-decision-container block-ui border-none shadow-none bg-transparent';
+                div.innerHTML = `
+                    <div class="fc-decision block-ui bg-yellow-400"></div>
+                    <div class="fc-decision-text text-sm sm:text-base px-2">${node.text}</div>
+                `;
+            }
+            else if (node.type === 'question') {
+                div.className = 'fc-process empty block-ui';
+                div.id = `block-${node.id}`;
+                div.innerText = '[ กดเพื่อเลือกคำสั่ง ]';
+                div.onclick = () => openModal(node.id);
+            }
+
+            return div;
+        }
+
+        function createArrow() {
+            const div = document.createElement('div');
+            div.className = 'fc-arrow';
+            div.innerText = '⬇️';
+            return div;
+        }
+
+        function openModal(questionId) {
+            activeQuestionId = questionId;
+            const level = levels[currentLevel];
+            choicesContainer.innerHTML = '';
+            
+            // Randomize choices order
+            const shuffledChoices = [...level.choices].sort(() => Math.random() - 0.5);
+
+            shuffledChoices.forEach(choice => {
+                const btn = document.createElement('button');
+                btn.className = 'block-ui bg-blue-100 hover:bg-blue-300 text-blue-900 font-bold py-4 px-4 rounded-xl text-lg text-left';
+                btn.innerText = choice;
+                btn.onclick = () => selectChoice(choice);
+                choicesContainer.appendChild(btn);
+            });
+
+            modalChoices.classList.remove('hide');
+        }
+
+        function closeModal() {
+            modalChoices.classList.add('hide');
+            activeQuestionId = null;
+        }
+
+        function selectChoice(choice) {
+            userAnswers[activeQuestionId] = choice;
+            
+            // Update UI
+            const block = document.getElementById(`block-${activeQuestionId}`);
+            block.innerText = choice;
+            block.classList.remove('empty', 'bg-E2E8F0', 'border-dashed');
+            block.classList.add('bg-green-400', 'text-white');
+            block.style.animation = 'none'; // stop pulse
+
+            closeModal();
+            checkReadyToSubmit();
+        }
+
+        function checkReadyToSubmit() {
+            const level = levels[currentLevel];
+            let allAnswered = true;
+
+            if (level.type === 'sequence') {
+                const questionId = level.nodes.find(n => n.type === 'question').id;
+                if (!userAnswers[questionId]) allAnswered = false;
+            } else if (level.type === 'condition') {
+                const yesId = level.nodes[2].branches.yes.id;
+                const noId = level.nodes[2].branches.no.id;
+                if (!userAnswers[yesId] || !userAnswers[noId]) allAnswered = false;
+            }
+
+            if (allAnswered) {
+                elCheckBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                elCheckBtn.disabled = false;
+            }
+        }
+
+        function checkAnswers() {
+            const level = levels[currentLevel];
+            let isCorrect = true;
+
+            if (level.type === 'sequence') {
+                const correctNode = level.nodes.find(n => n.type === 'question');
+                if (userAnswers[correctNode.id] !== correctNode.correct) isCorrect = false;
+            } else if (level.type === 'condition') {
+                const yesNode = level.nodes[2].branches.yes;
+                const noNode = level.nodes[2].branches.no;
+                if (userAnswers[yesNode.id] !== yesNode.correct || 
+                    userAnswers[noNode.id] !== noNode.correct) {
+                    isCorrect = false;
+                }
+            }
+
+            if (isCorrect) {
+                score += 100;
+                elScoreDisplay.innerText = score;
+                showFeedback(true);
+            } else {
+                showFeedback(false);
+            }
+        }
+
+        function showFeedback(isCorrect) {
+            modalFeedback.classList.remove('hide');
+            const icon = document.getElementById('feedback-icon');
+            const title = document.getElementById('feedback-title');
+            const msg = document.getElementById('feedback-msg');
+            const btn = document.getElementById('feedback-btn');
+
+            if (isCorrect) {
+                icon.innerText = '🌟';
+                title.innerText = 'สุดยอดเลย!';
+                title.className = 'text-3xl font-extrabold mb-2 text-green-500';
+                msg.innerText = 'น้องเลือกผังงานได้ถูกต้องสมบูรณ์แบบ!';
+                btn.className = 'w-full block-ui font-bold py-3 px-4 rounded-xl text-white text-xl bg-green-500 hover:bg-green-600';
+                btn.innerText = currentLevel < levels.length - 1 ? 'ไปด่านต่อไป! ➡️' : 'รับรางวัล! 🏆';
+                
+                btn.onclick = () => {
+                    modalFeedback.classList.add('hide');
+                    if (currentLevel < levels.length - 1) {
+                        currentLevel++;
+                        loadLevel(currentLevel);
+                    } else {
+                        winGame();
+                    }
+                };
+            } else {
+                icon.innerText = '😅';
+                title.innerText = 'โอ๊ะโอ... ยังไม่ใช่นะ';
+                title.className = 'text-3xl font-extrabold mb-2 text-red-500';
+                msg.innerText = 'ลองอ่านเงื่อนไข หรือลำดับขั้นตอนดีๆ อีกครั้งนะ สู้ๆ!';
+                btn.className = 'w-full block-ui font-bold py-3 px-4 rounded-xl text-white text-xl bg-yellow-400 hover:bg-yellow-500 text-gray-800';
+                btn.innerText = 'ลองใหม่ 🔄';
+                
+                btn.onclick = () => {
+                    modalFeedback.classList.add('hide');
+                };
+            }
+        }
+
+        function winGame() {
+            elScreenGame.classList.add('hide');
+            elScreenEnd.classList.remove('hide');
+            startConfetti();
+        }
+
+        // --- CERTIFICATE FUNCTIONS ---
+        function generateCertificate() {
+            const nameInput = document.getElementById('student-name').value;
+            if (!nameInput.trim()) {
+                alert('กรุณาพิมพ์ชื่อ-นามสกุลของน้องๆ ก่อนรับใบประกาศนียบัตรนะครับ! 🌟');
+                return;
+            }
+            document.getElementById('cert-name-display').innerText = nameInput;
+            document.getElementById('certificate-view').classList.remove('hide');
+        }
+
+        function closeCertificate() {
+            document.getElementById('certificate-view').classList.add('hide');
+        }
+
+        // --- VERY SIMPLE CONFETTI SCRIPT ---
+        function startConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            canvas.classList.remove('hide');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = [];
+            const colors = ['#F687B3', '#63B3ED', '#F6E05E', '#68D391', '#B794F4'];
+
+            for (let i = 0; i < 150; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    size: Math.random() * 10 + 5,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    speedY: Math.random() * 3 + 2,
+                    speedX: (Math.random() - 0.5) * 2,
+                    rotation: Math.random() * 360,
+                    rotationSpeed: (Math.random() - 0.5) * 10
+                });
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    p.y += p.speedY;
+                    p.x += p.speedX;
+                    p.rotation += p.rotationSpeed;
+
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.rotation * Math.PI / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+                    ctx.restore();
+
+                    // Reset to top if falls off
+                    if (p.y > canvas.height) {
+                        p.y = -10;
+                        p.x = Math.random() * canvas.width;
+                    }
+                });
+                requestAnimationFrame(animate);
+            }
+            animate();
+            
+            // Adjust canvas on resize
+            window.addEventListener('resize', () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            });
+        }
+    </script>
+</body>
+</html>
